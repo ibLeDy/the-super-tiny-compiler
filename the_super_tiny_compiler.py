@@ -1,13 +1,14 @@
+import copy
 from string import digits
 from string import ascii_lowercase
 
 
-def tokenizer(string):
+def tokenizer(program):
     current = 0
     tokens = []
 
-    while current < len(string):
-        char = string[current]
+    while current < len(program):
+        char = program[current]
 
         if char == '(':
             tokens.append({
@@ -35,7 +36,7 @@ def tokenizer(string):
             while char in numbers:
                 value += char
                 current += 1
-                char = string[current]
+                char = program[current]
 
             tokens.append({
                 'type': 'number',
@@ -46,12 +47,12 @@ def tokenizer(string):
         if char == '"':
             value = ''
             current += 1
-            char = string[current]
+            char = program[current]
 
             while char != '"':
                 value += char
                 current += 1
-                char = string[current]
+                char = program[current]
 
             tokens.append({
                 'type': 'string',
@@ -65,7 +66,7 @@ def tokenizer(string):
             while char in letters:
                 value += char
                 current += 1
-                char = string[current]
+                char = program[current]
 
             tokens.append({
                 'type': 'name',
@@ -158,19 +159,21 @@ def transformer(ast):
         'type': 'Program',
         'body': []
     }
+    old_ast = ast
+    ast = copy.deepcopy(old_ast)
     ast['_context'] = new_ast.get('body')
 
     def number_literal(node, parent):
         parent['_context'].append({
-                'type': 'NumberLiteral',
-                'value': node['value'],
-            })
+            'type': 'NumberLiteral',
+            'value': node['value'],
+        })
 
     def string_literal(node, parent):
         parent['_context'].append({
-                'type': 'StringLiteral',
-                'value': node['value'],
-            })
+            'type': 'StringLiteral',
+            'value': node['value'],
+        })
 
     def call_expression(node, parent):
         expression = {
@@ -190,7 +193,6 @@ def transformer(ast):
             }
 
         parent['_context'].append(expression)
-
 
     traverser(ast, {
         'NumberLiteral': number_literal,
@@ -220,8 +222,8 @@ def code_generator(node):
         raise TypeError(node['type'])
 
 
-def compiler(string):
-    tokens = tokenizer(string)
+def compiler(program):
+    tokens = tokenizer(program)
     ast = parser(tokens)
     new_ast = transformer(ast)
     output = code_generator(new_ast)
@@ -230,4 +232,3 @@ def compiler(string):
 
 if __name__ == '__main__':
     output = compiler('(add 2 (subtract 4 2))')
-    print(output)
